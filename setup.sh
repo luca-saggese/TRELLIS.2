@@ -57,9 +57,41 @@ fi
 
 # Get system information
 WORKDIR=$(pwd)
-if command -v nvidia-smi > /dev/null; then
+
+apt_install() {
+    if command -v apt-get > /dev/null; then
+        if [ "$(id -u)" -eq 0 ] ; then
+            apt-get install -y "$@"
+        elif command -v sudo > /dev/null; then
+            sudo apt-get install -y "$@"
+        else
+            echo "Error: apt-get install requires root privileges or sudo"
+            exit 1
+        fi
+    elif command -v apt > /dev/null; then
+        if [ "$(id -u)" -eq 0 ] ; then
+            apt install -y "$@"
+        elif command -v sudo > /dev/null; then
+            sudo apt install -y "$@"
+        else
+            echo "Error: apt install requires root privileges or sudo"
+            exit 1
+        fi
+    else
+        echo "[BASIC] Skipping OS package installation because apt/apt-get is unavailable"
+    fi
+}
+
+if [ -n "$TRELLIS2_PLATFORM" ] ; then
+    PLATFORM="$TRELLIS2_PLATFORM"
+elif command -v nvidia-smi > /dev/null \
+    || command -v nvcc > /dev/null \
+    || { [ -n "$CUDA_HOME" ] && [ -d "$CUDA_HOME" ]; } \
+    || [ -d "/usr/local/cuda" ] ; then
     PLATFORM="cuda"
-elif command -v rocminfo > /dev/null; then
+elif command -v rocminfo > /dev/null \
+    || { [ -n "$ROCM_HOME" ] && [ -d "$ROCM_HOME" ]; } \
+    || [ -d "/opt/rocm" ] ; then
     PLATFORM="hip"
 else
     echo "Error: No supported GPU found"
@@ -79,7 +111,7 @@ fi
 if [ "$BASIC" = true ] ; then
     pip install imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers gradio==6.0.1 tensorboard pandas lpips zstandard
     pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
-    sudo apt install -y libjpeg-dev
+    apt_install libjpeg-dev
     pip install pillow-simd
     pip install kornia timm
 fi
