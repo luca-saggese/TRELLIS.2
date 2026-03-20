@@ -1,4 +1,7 @@
-FROM dgx-spark-base
+
+# Container Version	Ubuntu	CUDA Toolkit	PyTorch	TensorRT
+# 25.01	24.04	NVIDIA CUDA 12.8.0	2.6.0a0+ecf3bae40a	TensorRT 10.8.0.40
+FROM nvcr.io/nvidia/pytorch:25.01-py3
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -33,53 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY . .
 
-RUN python -m pip install --upgrade pip setuptools wheel
-
-RUN python -m pip install \
-    packaging \
-    psutil \
-    cmake \
-    pybind11 \
-    ninja \
-    triton \
-    imageio \
-    imageio-ffmpeg \
-    tqdm \
-    easydict \
-    opencv-python-headless \
-    plyfile \
-    trimesh \
-    transformers \
-    gradio==6.0.1 \
-    tensorboard \
-    pandas \
-    lpips \
-    zstandard \
-    kornia \
-    timm \
-    huggingface_hub \
-    safetensors \
-    sentencepiece
-
-RUN python -m pip install --no-deps git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
-
-RUN mkdir -p /tmp/extensions && \
-    git clone -b v0.4.0 https://github.com/NVlabs/nvdiffrast.git /tmp/extensions/nvdiffrast && \
-    python -m pip install /tmp/extensions/nvdiffrast --no-build-isolation
-
-RUN mkdir -p /tmp/extensions && \
-    git clone -b renderutils https://github.com/JeffreyXiang/nvdiffrec.git /tmp/extensions/nvdiffrec && \
-    python -m pip install /tmp/extensions/nvdiffrec --no-build-isolation
-
-RUN mkdir -p /tmp/extensions && \
-    git clone https://github.com/JeffreyXiang/CuMesh.git /tmp/extensions/CuMesh --recursive && \
-    python -m pip install /tmp/extensions/CuMesh --no-build-isolation
-
-RUN mkdir -p /tmp/extensions && \
-    git clone https://github.com/JeffreyXiang/FlexGEMM.git /tmp/extensions/FlexGEMM --recursive && \
-    python -m pip install /tmp/extensions/FlexGEMM --no-build-isolation
-
-RUN cd o-voxel && python setup.py install && cd /workspace/TRELLIS.2 && rm -rf /tmp/extensions
+RUN . ./setup.sh --basic --flash-attn --nvdiffrast --nvdiffrec --cumesh --o-voxel --flexgemm
 
 EXPOSE 7860
 
