@@ -47,6 +47,7 @@ RUN python -m pip install \
     tqdm \
     easydict \
     opencv-python-headless \
+    plyfile \
     trimesh \
     transformers \
     gradio==6.0.1 \
@@ -78,7 +79,7 @@ RUN mkdir -p /tmp/extensions && \
     git clone https://github.com/JeffreyXiang/FlexGEMM.git /tmp/extensions/FlexGEMM --recursive && \
     python -m pip install /tmp/extensions/FlexGEMM --no-build-isolation
 
-RUN python -m pip install ./o-voxel --no-build-isolation && rm -rf /tmp/extensions
+RUN cd o-voxel && python setup.py install && cd /workspace/TRELLIS.2 && rm -rf /tmp/extensions
 
 EXPOSE 7860
 
