@@ -79,7 +79,7 @@ RUN mkdir -p /tmp/extensions && \
     git clone https://github.com/JeffreyXiang/FlexGEMM.git /tmp/extensions/FlexGEMM --recursive && \
     python -m pip install /tmp/extensions/FlexGEMM --no-build-isolation
 
-RUN cd o-voxel && python setup.py install && cd /workspace/TRELLIS.2 && rm -rf /tmp/extensions
+# RUN cd o-voxel && python setup.py install && cd /workspace/TRELLIS.2 && rm -rf /tmp/extensions
 
 EXPOSE 7860
 
