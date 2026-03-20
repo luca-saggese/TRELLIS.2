@@ -60,7 +60,7 @@ RUN python -m pip install \
     safetensors \
     sentencepiece
 
-RUN python -m pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+RUN python -m pip install --no-deps git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
 
 RUN python -m pip install flash-attn==2.7.3 --no-build-isolation
 
