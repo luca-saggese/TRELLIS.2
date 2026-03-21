@@ -1,5 +1,5 @@
 # Read Arguments
-TEMP=`getopt -o h --long help,new-env,basic,flash-attn,cumesh,o-voxel,flexgemm,nvdiffrast,nvdiffrec -n 'setup.sh' -- "$@"`
+TEMP=`getopt -o h --long help,new-env,basic,flash-attn,cumesh,o-voxel,flexgemm,nvdiffrast,nvdiffrec,wheel-dir: -n 'setup.sh' -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -13,6 +13,7 @@ FLEXGEMM=false
 NVDIFFRAST=false
 NVDIFFREC=false
 ERROR=false
+WHEEL_DIR=""
 
 
 if [ "$#" -eq 1 ] ; then
@@ -30,6 +31,7 @@ while true ; do
         --flexgemm) FLEXGEMM=true ; shift ;;
         --nvdiffrast) NVDIFFRAST=true ; shift ;;
         --nvdiffrec) NVDIFFREC=true ; shift ;;
+        --wheel-dir) WHEEL_DIR="$2" ; shift 2 ;;
         --) shift ; break ;;
         *) ERROR=true ; break ;;
     esac
@@ -52,6 +54,7 @@ if [ "$HELP" = true ] ; then
     echo "  --flexgemm              Install flexgemm"
     echo "  --nvdiffrast            Install nvdiffrast"
     echo "  --nvdiffrec             Install nvdiffrec"
+    echo "  --wheel-dir DIR         Save downloaded .whl files to DIR"
     return
 fi
 
@@ -82,6 +85,16 @@ apt_install() {
     fi
 }
 
+pip_install_index() {
+    if [ -n "$WHEEL_DIR" ] ; then
+        mkdir -p "$WHEEL_DIR"
+        # Best effort wheel pre-download; continue with install if some deps have no wheel.
+        pip download --dest "$WHEEL_DIR" --only-binary=:all: "$@" || \
+            echo "[WHEEL] Warning: some packages do not provide prebuilt wheels"
+    fi
+    pip install "$@"
+}
+
 if [ -n "$TRELLIS2_PLATFORM" ] ; then
     PLATFORM="$TRELLIS2_PLATFORM"
 elif command -v nvidia-smi > /dev/null \
@@ -102,23 +115,25 @@ if [ "$NEW_ENV" = true ] ; then
     conda create -n trellis2 python=3.10
     conda activate trellis2
     if [ "$PLATFORM" = "cuda" ] ; then
-        pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+        pip_install_index torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
     elif [ "$PLATFORM" = "hip" ] ; then
-        pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/rocm6.2.4
+        pip_install_index torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/rocm6.2.4
     fi
 fi
 
 if [ "$BASIC" = true ] ; then
-    pip install imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers gradio==6.0.1 tensorboard pandas lpips zstandard
+    pip_install_index "numpy<2"
+    pip_install_index --force-reinstall --no-cache-dir "opencv-python-headless<4.11"
+    pip_install_index imageio imageio-ffmpeg tqdm easydict ninja trimesh transformers gradio==6.0.1 tensorboard pandas lpips zstandard
     pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
     apt_install libjpeg-dev
-    pip install pillow-simd
-    pip install kornia timm
+    pip_install_index pillow-simd
+    pip_install_index kornia timm
 fi
 
 if [ "$FLASHATTN" = true ] ; then
     if [ "$PLATFORM" = "cuda" ] ; then
-        pip install flash-attn==2.7.3
+        pip_install_index flash-attn==2.7.3
     elif [ "$PLATFORM" = "hip" ] ; then
         echo "[FLASHATTN] Prebuilt binaries not found. Building from source..."
         mkdir -p /tmp/extensions

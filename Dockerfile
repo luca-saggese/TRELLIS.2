@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY . .
 
-RUN . ./setup.sh --basic --nvdiffrast --nvdiffrec --cumesh --o-voxel --flexgemm
+RUN . ./setup.sh --basic --nvdiffrast --nvdiffrec --cumesh --o-voxel --flexgemm --wheel-dir /tmp/trellis-wheels
+RUN python -m pip install --no-cache-dir --force-reinstall "numpy<2" "opencv-python-headless<4.11"
 
 EXPOSE 7860
 
